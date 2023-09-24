@@ -83,8 +83,6 @@ void wonderful_free(wonderful_pointer ptr){
     }
     size_t idx = chunk->size/8-1;
 
-    chunk->size = chunk->size | 0x1; //set freed flag;
-
     if(bins[idx] == NULL)
         bins[idx]=smartbin_init(chunk->size);
 
@@ -148,27 +146,28 @@ static smartbin* smartbin_init(size_t size){
 
     return bin;
 }
-static void smartbin_put(smartbin* bin, wonderful_pointer chunk){
+static void smartbin_put(smartbin* bin, wonderful_pointer ptr){
 
-    wonderful_pointer* ptr = heap->heap_base+chunk+sizeof(size_t); //get pointer to freed chunk
-    *ptr = bin->next; //write next ptr into chunk;
+    chunk* chunk = heap->heap_base+ptr-sizeof(size_t); //get pointer to freed chunk
+    chunk->size = chunk->size | 1; //set freed flag
+    chunk->fd_offset = bin->next; //write next ptr into chunk;
 
-    bin->next = chunk; //save chunk to bin
+    bin->next = ptr-sizeof(size_t); //save chunk to bin //ptr is chunk+sizeof(size_t)
 
     return;
 }
 static wonderful_pointer smartbin_get(smartbin* bin){
 
     wonderful_pointer current = bin->next;
+    printf("current in bin is: %u ",current);
+    chunk* chunk = heap->heap_base+current; //current chunk
 
-    chunk* chunk = heap->heap_base+current -sizeof(size_t); //current chunk
+    chunk->size =chunk->size ^ 0x1; //set allocated flag
 
-    chunk->size =chunk->size - 0x1; //set allocated flag
-
-    wonderful_pointer next = *(wonderful_pointer*)(heap->heap_base + bin->next+sizeof(size_t));
+    wonderful_pointer next = chunk->fd_offset;
     //get next chunk addr from next bin field
     bin->next = next;
-
-    return current;
+    printf("next is: %u ",next);
+    return current+sizeof(size_t);
 }
 
