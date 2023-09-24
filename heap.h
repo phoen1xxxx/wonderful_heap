@@ -15,6 +15,7 @@ typedef struct chunk{
 typedef struct smartbin{
     size_t size;
     wonderful_pointer next;
+    //pointer to the next chunk
 }smartbin;
 
 typedef struct Heap{
@@ -24,16 +25,19 @@ typedef struct Heap{
     chunk* current_chunk;
 }Heap;
 
-wonderful_pointer wonderful_malloc(Heap* heap,size_t size);
+wonderful_pointer wonderful_malloc(size_t size);
 
 void wonderful_free(wonderful_pointer pointer);
 
 Heap* init(size_t size);
 
-int safe_write(Heap* heap,wonderful_pointer pointer,char* buffer,size_t size);
+int safe_write(wonderful_pointer pointer,char* buffer,size_t size);
 
-int safe_read(Heap* heap,wonderful_pointer pointer,char* buffer,size_t size);
+int safe_read(wonderful_pointer pointer,char* buffer,size_t size);
 
-static void smartbin_put(Heap* heap,smartbin smartbin,wonderful_pointer chunk);
+static void smartbin_put(smartbin* bin,wonderful_pointer chunk);
 
-static wonderful_pointer smartbin_get(Heap* heap,smartbin smartbin);
+static wonderful_pointer smartbin_get(smartbin* bin);
+
+static smartbin* smartbin_init(size_t size);
+
