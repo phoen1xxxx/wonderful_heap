@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #define HEAP_INIT_ERR 0xde
 #define HEAPSIZE 4096*100 //0x64000
+#define NOT_INITIALIZED 0x50
+#define MALLOC_ERROR 0x80
 #define ALCERR -1
 #define OUT_OF_HEAP -2
 typedef unsigned int wonderful_pointer;
@@ -9,7 +11,8 @@ typedef unsigned int wonderful_pointer;
 typedef struct chunk{
     size_t size;
     //if freed
-    wonderful_pointer fd_offset;
+    wonderful_pointer fd_offset; 
+    //last bit of size is flag. i if freed, 0 if allocated
 }chunk;
 
 typedef struct smartbin{

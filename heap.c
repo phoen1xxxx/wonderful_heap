@@ -53,7 +53,7 @@ wonderful_pointer wonderful_malloc(size_t size){
         ptr = smartbin_get(bins[idx]);
 
         if(heap->heap_base+ptr > heap->heap_base+heap->heap_size) //security check
-            exit(0x100);
+            exit(OUT_OF_HEAP);
         
         return ptr;
     }
@@ -71,8 +71,25 @@ wonderful_pointer wonderful_malloc(size_t size){
 }
 void wonderful_free(wonderful_pointer ptr){
 
+    if(heap==NULL){
+        printf("HEAP IS NOT INITIALISED");
+        exit(NOT_INITIALIZED);
+    }
+    chunk* chunk = heap->heap_base + ptr - sizeof(size_t);//get chunk
 
- 
+    if((chunk->size & 0x1) ==1){
+        printf("DOUBLE FREEE");
+        exit(MALLOC_ERROR);
+    }
+    size_t idx = chunk->size/8-1;
+
+    chunk->size = chunk->size | 0x1; //set freed flag;
+
+    if(bins[idx] == NULL)
+        bins[idx]=smartbin_init(chunk->size);
+
+    smartbin_put(bins[idx],ptr);
+
     return;
 }
 /////////////////////////////////////
@@ -131,7 +148,7 @@ static smartbin* smartbin_init(size_t size){
 
     return bin;
 }
-static void smarbin_put(smartbin* bin, wonderful_pointer chunk){
+static void smartbin_put(smartbin* bin, wonderful_pointer chunk){
 
     wonderful_pointer* ptr = heap->heap_base+chunk+sizeof(size_t); //get pointer to freed chunk
     *ptr = bin->next; //write next ptr into chunk;
@@ -143,6 +160,10 @@ static void smarbin_put(smartbin* bin, wonderful_pointer chunk){
 static wonderful_pointer smartbin_get(smartbin* bin){
 
     wonderful_pointer current = bin->next;
+
+    chunk* chunk = heap->heap_base+current -sizeof(size_t); //current chunk
+
+    chunk->size =chunk->size - 0x1; //set allocated flag
 
     wonderful_pointer next = *(wonderful_pointer*)(heap->heap_base + bin->next+sizeof(size_t));
     //get next chunk addr from next bin field
