@@ -3,6 +3,7 @@
 #define HEAP_INIT_ERR 0xde
 #define HEAPSIZE 4096*100 //0x64000
 #define NOT_INITIALIZED 0x50
+#define OFFSET sizeof(size_t)
 #define MALLOC_ERROR 0x80
 #define ALCERR -1
 #define OUT_OF_HEAP -2
