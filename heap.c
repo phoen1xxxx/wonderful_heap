@@ -11,7 +11,8 @@ Heap* heap = NULL;
 /*help functions */
 
 static size_t align_8(size_t size){
-    size_t a = size%8;
+
+    size_t a = size%8; //8 bytes align function
 
     if(a!=0)
         size+=(8-a);
@@ -42,6 +43,7 @@ Heap* init(size_t size){
 wonderful_pointer wonderful_malloc(size_t size){
     
     wonderful_pointer ptr = 0;
+
     if(heap==NULL)
         heap = init(HEAPSIZE);
  
@@ -50,11 +52,11 @@ wonderful_pointer wonderful_malloc(size_t size){
     
     size = align_8(size);
 
-    size_t idx  = size/8 -1;
+    size_t idx  = size/8 -1; //find bins index
 
-    if(bins[idx]!=NULL && bins[idx]->next!=0){
+    if(bins[idx]!=NULL && bins[idx]->next!=0){ //try to get chunk from bins
 
-        ptr = smartbin_get(bins[idx]);
+        ptr = smartbin_get(bins[idx]); //get from bins
 
         if(heap->heap_base+ptr > heap->heap_base+heap->heap_size) //security check
             exit(OUT_OF_HEAP);
@@ -62,13 +64,14 @@ wonderful_pointer wonderful_malloc(size_t size){
         return ptr;
     }
 
+    //If chunk is not in bins
     heap->next_chunk->size=size;
 
     heap->current_chunk=heap->next_chunk;
 
     ptr=(long)heap->next_chunk - (long)heap->heap_base;
 
-    heap->next_chunk=(chunk*)((long)heap->next_chunk+(long)heap->next_chunk->size+sizeof(size_t)); 
+    heap->next_chunk=(chunk*)((long)heap->next_chunk+(long)heap->next_chunk->size+sizeof(size_t)); //move nextchunk pointer by size
 
     return ptr+sizeof(size_t);
     //we need to add an offset of size of size_t to our pointer and to next_chunk_ptr caused by size field
@@ -81,8 +84,10 @@ void wonderful_free(wonderful_pointer ptr){
     }
     chunk* chunk = heap->heap_base + ptr - sizeof(size_t);//get chunk
 
-    if((chunk->size & 0x1) ==1){
+    if((chunk->size & 0x1) ==1){ //check if freed
+
         printf("DOUBLE FREEE");
+
         exit(MALLOC_ERROR);
     }
     size_t idx = chunk->size/8-1;
@@ -90,7 +95,7 @@ void wonderful_free(wonderful_pointer ptr){
     if(bins[idx] == NULL)
         bins[idx]=smartbin_init(chunk->size);
 
-    smartbin_put(bins[idx],ptr);
+    smartbin_put(bins[idx],ptr);//put chunk into bin
 
     return;
 }
