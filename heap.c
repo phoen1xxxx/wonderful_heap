@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include "heap.h"
+//heap v1.0
 /* Here you can see my wonderful implementation of heap :D */
 
 smartbin* bins[63]= {0}; //from 0x8 to 63*0x8
