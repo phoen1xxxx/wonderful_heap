@@ -5,15 +5,13 @@
 #include <sys/mman.h>
 #include "heap.h"
 /* Here you can see my wonderful implementation of heap :D */
-//heap v0.0 version
 
 smartbin* bins[63]= {0}; //from 0x8 to 63*0x8
 Heap* heap = NULL;
 /*help functions */
 
 static size_t align_8(size_t size){
-
-    size_t a = size%8; //8 bytes align function
+    size_t a = size%8;
 
     if(a!=0)
         size+=(8-a);
@@ -44,7 +42,6 @@ Heap* init(size_t size){
 wonderful_pointer wonderful_malloc(size_t size){
     
     wonderful_pointer ptr = 0;
-
     if(heap==NULL)
         heap = init(HEAPSIZE);
  
@@ -53,11 +50,11 @@ wonderful_pointer wonderful_malloc(size_t size){
     
     size = align_8(size);
 
-    size_t idx  = size/8 -1; //find bins index
+    size_t idx  = size/8 -1;
 
-    if(bins[idx]!=NULL && bins[idx]->next!=0){ //try to get chunk from bins
+    if(bins[idx]!=NULL && bins[idx]->next!=0){
 
-        ptr = smartbin_get(bins[idx]); //get from bins
+        ptr = smartbin_get(bins[idx]);
 
         if(heap->heap_base+ptr > heap->heap_base+heap->heap_size) //security check
             exit(OUT_OF_HEAP);
@@ -65,14 +62,13 @@ wonderful_pointer wonderful_malloc(size_t size){
         return ptr;
     }
 
-    //If chunk is not in bins
     heap->next_chunk->size=size;
 
     heap->current_chunk=heap->next_chunk;
 
     ptr=(long)heap->next_chunk - (long)heap->heap_base;
 
-    heap->next_chunk=(chunk*)((long)heap->next_chunk+(long)heap->next_chunk->size+sizeof(size_t)); //move nextchunk pointer by size
+    heap->next_chunk=(chunk*)((long)heap->next_chunk+(long)heap->next_chunk->size+sizeof(size_t)); 
 
     return ptr+sizeof(size_t);
     //we need to add an offset of size of size_t to our pointer and to next_chunk_ptr caused by size field
@@ -80,15 +76,13 @@ wonderful_pointer wonderful_malloc(size_t size){
 void wonderful_free(wonderful_pointer ptr){
 
     if(heap==NULL){
-        printf("HEAP IS NOT INITIALISED");
+        puts("HEAP IS NOT INITIALISED");
         exit(NOT_INITIALIZED);
     }
     chunk* chunk = heap->heap_base + ptr - sizeof(size_t);//get chunk
 
-    if((chunk->size & 0x1) ==1){ //check if freed
-
-        printf("DOUBLE FREEE");
-
+    if((chunk->size & 0x1) ==1){
+        puts("DOUBLE FREEE");
         exit(MALLOC_ERROR);
     }
     size_t idx = chunk->size/8-1;
@@ -96,7 +90,7 @@ void wonderful_free(wonderful_pointer ptr){
     if(bins[idx] == NULL)
         bins[idx]=smartbin_init(chunk->size);
 
-    smartbin_put(bins[idx],ptr);//put chunk into bin
+    smartbin_put(bins[idx],ptr);
 
     return;
 }
@@ -108,11 +102,18 @@ void wonderful_free(wonderful_pointer ptr){
 int safe_write(wonderful_pointer pointer,char* buffer,size_t size){
     size_t i =0;
 
-    if(heap->current_chunk->size<size)
-        size = heap->current_chunk->size;
-
     void* real_ptr = heap->heap_base+pointer;
+    
+    size_t chunk_size = *((long*)(real_ptr-8));
+    
+    if(chunk_size&1){
+        puts("WRITE INTO FREED CHUNK");
+        exit(-1);
+    }
 
+    if(chunk_size<size)
+        size=chunk_size;
+    
     if(real_ptr > heap->heap_base+heap->heap_size || real_ptr < heap->heap_base)
         return OUT_OF_HEAP;
 
@@ -127,9 +128,16 @@ int safe_read(wonderful_pointer pointer,char* buffer,size_t size){
     size_t i =0;
 
     void* real_ptr = heap->heap_base+pointer;
+    
+    size_t chunk_size = *((long*)(real_ptr-8));
+    
+    if(chunk_size&1){
+        puts("READ FROM FREED CHUNK");
+        exit(-1);
+    }
 
-    if(heap->current_chunk->size<size) //check for current_chunk oob
-        size = heap->current_chunk->size;
+    if(chunk_size<size)
+        size=chunk_size;
 
     if(real_ptr > heap->heap_base+heap->heap_size || real_ptr<heap->heap_base) //check for heap_oob
         return OUT_OF_HEAP;

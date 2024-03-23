@@ -7,13 +7,17 @@
 #define MALLOC_ERROR 0x80
 #define ALCERR -1
 #define OUT_OF_HEAP -2
+
+#ifndef HEHEAP
+#define HEHEAP
+
 typedef unsigned int wonderful_pointer;
 
 typedef struct chunk{
     size_t size;
     //if freed
     wonderful_pointer fd_offset; 
-    //last bit of size is flag. i if freed, 0 if allocated
+    //last bit of size is flag. 1 if freed, 0 if allocated
 }chunk;
 
 typedef struct smartbin{
@@ -45,3 +49,4 @@ static wonderful_pointer smartbin_get(smartbin* bin);
 
 static smartbin* smartbin_init(size_t size);
 
+#endif
